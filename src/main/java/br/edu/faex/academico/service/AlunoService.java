@@ -2,66 +2,78 @@ package br.edu.faex.academico.service;
 
 import br.edu.faex.academico.model.Aluno;
 import br.edu.faex.academico.repository.AlunoRepository;
-
 import java.util.List;
 
 public class AlunoService {
+
     private AlunoRepository repository;
-    private Long proximoId = 1L;
 
     public AlunoService(AlunoRepository repository) {
         this.repository = repository;
     }
 
-    public void cadastrar(Aluno aluno){
-        if (aluno.getNome() == null || aluno.getNome().isBlank()) {
+    // Método de validação PRIVADO reutilizável
+    private boolean validar(Aluno aluno) {
+        if (aluno.getNome() == null || aluno.getNome().trim().isEmpty()) {
             System.out.println("O nome do aluno é obrigatório.");
-            return;
+            return false;
         }
 
-        if (aluno.getEmail() == null || aluno.getEmail().isBlank()) {
+        if (aluno.getEmail() == null || aluno.getEmail().trim().isEmpty()) {
             System.out.println("O e-mail do aluno é obrigatório.");
-            return;
+            return false;
         }
 
         if (!aluno.getEmail().contains("@")) {
             System.out.println("E-mail inválido.");
-            return;
+            return false;
         }
 
-        if (repository.listar().stream()
-                .anyMatch(a -> a.getEmail().equalsIgnoreCase(aluno.getEmail()))) {
-            System.out.println("E-mail já cadastrado.");
-            return;
-        }
-
-        aluno.setId(proximoId);
-        proximoId++;
-
-        this.repository.salvar(aluno);
-        System.out.println("Aluno cadastrado com sucesso.");
+        return true;
     }
 
-    public List<Aluno> listar(){
+    public void cadastrar(Aluno aluno) {
+        if (!validar(aluno)) {
+            return;
+        }
+        repository.cadastrar(aluno);
+    }
+
+    public List<Aluno> listar() {
         return repository.listar();
     }
 
-    public Aluno buscarPorid(Long id){
-        Aluno aluno = repository.buscarPorId(id);
-        if (aluno == null){
-            System.out.println("");
-            return null;
-        }
-        return aluno;
+    public Aluno buscarPorId(Long id) {
+        return repository.buscarPorId(id);
     }
 
-    public void excluir(Long id){
+    // Excluir com verificação de existência
+    public void excluir(Long id) {
         Aluno aluno = repository.buscarPorId(id);
-        if(aluno == null){
-            System.out.println("Aluno não encontrado!");
+
+        if (aluno == null) {
+            System.out.println("Aluno não encontrado.");
             return;
         }
+
         repository.excluir(id);
+        System.out.println("Aluno excluído com sucesso.");
     }
 
+    // Atualizar com verificação de existência e validação privada
+    public void atualizar(Aluno alunoEditado) {
+        Aluno aluno = repository.buscarPorId(alunoEditado.getId());
+
+        if (aluno == null) {
+            System.out.println("Aluno não encontrado.");
+            return;
+        }
+
+        if (!validar(alunoEditado)) {
+            return;
+        }
+
+        repository.atualizar(alunoEditado);
+        System.out.println("Aluno atualizado com sucesso.");
+    }
 }
